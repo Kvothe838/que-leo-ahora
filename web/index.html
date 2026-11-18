@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qué leo ahora</title>
+<style>
+  :root {
+    --bg: #f6f4ef; --panel: #ffffff; --ink: #1d1b16; --muted: #6b665b; --line: #e3dfd3;
+    --accent: #2f6f5e; --accent-ink: #ffffff; --chip: #efece3; --star: #b7791f; --hl: #fff3c4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17160f; --panel: #211f17; --ink: #efeadd; --muted: #a39d8c; --line: #38352a;
+      --accent: #6fbfa8; --accent-ink: #10201b; --chip: #2d2a1f; --star: #e3a93c; --hl: #3a3315;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding: 20px 24px 8px; display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; }
+  h1 { font-size: 22px; margin: 0; }
+  header small { color: var(--muted); }
+  .layout { display: grid; grid-template-columns: 300px 1fr; gap: 20px; padding: 12px 24px 40px; align-items: start; }
+  @media (max-width: 820px) { .layout { grid-template-columns: 1fr; padding: 12px 16px 40px; } }
+  aside { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto; }
+  @media (max-width: 820px) { aside { position: static; max-height: none; } }
+  fieldset { border: 0; padding: 0; margin: 0 0 16px; }
+  legend { font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 0; margin-bottom: 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { border: 1px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 999px; padding: 3px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+  .chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .chip .n { opacity: .65; margin-left: 4px; font-size: 12px; }
+  .row { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+  input[type=number], input[type=search], select { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; }
+  label.check { display: flex; gap: 8px; align-items: center; margin: 4px 0; cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 8px; padding: 8px 12px; font: inherit; font-weight: 600; cursor: pointer; width: 100%; }
+  button.ghost { background: none; border: 1px solid var(--line); color: var(--ink); border-radius: 8px; padding: 6px 12px; font: inherit; cursor: pointer; width: 100%; margin-top: 8px; }
+  .meta { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+  .card.pick { border-color: var(--accent); background: var(--hl); grid-column: 1 / -1; }
+  .card h3 { margin: 0; font-size: 16px; line-height: 1.25; }
+  .card h3 a { color: inherit; text-decoration: none; }
+  .card h3 a:hover { text-decoration: underline; }
+  .by { color: var(--muted); }
+  .facts { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--muted); font-size: 13px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tag { background: var(--chip); border-radius: 6px; padding: 1px 7px; font-size: 12px; }
+  .tag.liked { background: var(--accent); color: var(--accent-ink); }
+  .tag.fav { color: var(--star); }
+  .empty { padding: 40px; text-align: center; color: var(--muted); }
+  .banner { font-weight: 600; margin-bottom: 4px; color: var(--accent); }
+  [hidden] { display: none !important; }
+  .linkbtn { margin-left: auto; background: none; border: 0; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; text-decoration: underline dotted; padding: 2px 4px; }
+  .linkbtn:hover { color: var(--accent); }
+  .classify { padding: 12px 24px 40px; max-width: 980px; }
+  @media (max-width: 820px) { .classify { padding: 12px 16px 40px; } }
+  .classify .top { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-bottom: 12px; }
+  .classify .top button { width: auto; margin: 0; }
+  .classify .help { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+  .classify .help code { background: var(--chip); padding: 1px 5px; border-radius: 4px; }
+  .crow { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; display: grid; gap: 6px; }
+  .crow.done { border-color: var(--accent); }
+  .crow .links { display: flex; gap: 12px; font-size: 13px; }
+  .crow .links a { color: var(--accent); }
+  .crow input[type=number] { width: 110px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Qué leo ahora</h1>
+  <small id="stamp"></small>
+  <button class="linkbtn" id="classifyLink" type="button" hidden title="Libros sin género: asignarlos a mano"></button>
+</header>
+<div class="layout" id="listView">
+  <aside id="filters" aria-label="Filtros"></aside>
+  <main>
+    <p class="meta" id="count" aria-live="polite"></p>
+    <div class="grid" id="results"></div>
+  </main>
+</div>
+
+<section class="classify" id="classify" hidden aria-label="Clasificar libros sin género"></section>
+
+<script>
+const DATA = /*__DATA__*/ {};
+
+const SHELVES = [
+  ["to-read", "Quiero leer"], ["currently-reading", "Leyendo"],
+  ["read", "Leídos"], ["did-not-finish", "Abandonados"],
+];
+const SORTS = {
+  "pages-asc": ["Páginas (menos primero)", (a, b) => (a.pages || 1e9) - (b.pages || 1e9)],
+  "pages-desc": ["Páginas (más primero)", (a, b) => b.pages - a.pages],
+  "added-asc": ["Hace más que lo tengo en la lista", (a, b) => a.added.localeCompare(b.added)],
+  "added-desc": ["Agregados recientemente", (a, b) => b.added.localeCompare(a.added)],
+  "year-asc": ["Año (más antiguo)", (a, b) => (a.year || 9999) - (b.year || 9999)],
+  "year-desc": ["Año (más reciente)", (a, b) => b.year - a.year],
+  "title": ["Título (A–Z)", (a, b) => a.title.localeCompare(b.title, "es")],
+};
+const DEFAULTS = {
+  shelves: ["to-read"], genres: [], genreMode: "any", tags: [], pagesMin: "", pagesMax: "",
+  yearMin: "", yearMax: "", liked: false, owned: false, q: "", sort: "pages-asc",
+};
+
+let state = loadState();
+let pick = null;
+
+// ---- Overrides pendientes (se guardan en el navegador hasta exportarlos) ----------
+const OV_KEY = "books-helper-overrides";
+let pending = loadPending();
+DATA.books.forEach(b => { b.orig = { genres: b.genres, pages: b.pages }; });
+const UNCLASSIFIED = "Sin clasificar";
+
+function loadPending() {
+  try {
+    const p = JSON.parse(localStorage.getItem(OV_KEY) || "{}");
+    // Lo que ya está en data/overrides.json deja de ser "pendiente".
+    for (const id of Object.keys(p)) if (DATA.overrides && DATA.overrides[id]) delete p[id];
+    return p;
+  } catch { return {}; }
+}
+function savePending() { try { localStorage.setItem(OV_KEY, JSON.stringify(pending)); } catch {} }
+function applyOverride(b) {
+  const o = pending[b.id] || {};
+  b.genres = o.genres && o.genres.length ? o.genres : b.orig.genres;
+  b.pages = o.pages || b.orig.pages;
+}
+DATA.books.forEach(applyOverride);
+
+function loadState() {
+  try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem("books-helper") || "{}") }; }
+  catch { return { ...DEFAULTS }; }
+}
+function saveState() { try { localStorage.setItem("books-helper", JSON.stringify(state)); } catch {} }
+
+const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+const num = v => (v === "" || v == null ? null : Number(v));
+const toggle = (arr, v) => (arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v]);
+
+function h(tag, attrs = {}, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else if (k === "class") el.className = v;
+    else if (v === true) el.setAttribute(k, "");
+    else if (v !== false && v != null) el.setAttribute(k, v);
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) el.append(kid);
+  return el;
+}
+
+// ---- Filtrado -------------------------------------------------------------
+function matches(b, ignore = {}) {
+  if (!ignore.shelves && state.shelves.length && !state.shelves.includes(b.shelf)) return false;
+  const pmin = num(state.pagesMin), pmax = num(state.pagesMax);
+  if (pmin != null || pmax != null) {
+    if (!b.pages) return false;
+    if (pmin != null && b.pages < pmin) return false;
+    if (pmax != null && b.pages > pmax) return false;
+  }
+  const ymin = num(state.yearMin), ymax = num(state.yearMax);
+  if (ymin != null && (!b.year || b.year < ymin)) return false;
+  if (ymax != null && (!b.year || b.year > ymax)) return false;
+  if (!ignore.genres && state.genres.length) {
+    const ok = state.genreMode === "all"
+      ? state.genres.every(g => b.genres.includes(g))
+      : state.genres.some(g => b.genres.includes(g));
+    if (!ok) return false;
+  }
+  if (state.tags.length && !state.tags.some(t => (b.tags || []).includes(t))) return false;
+  if (state.liked && !(b.liked && b.liked.length)) return false;
+  if (state.owned && !b.owned) return false;
+  if (state.q) {
+    const hay = norm(b.title + " " + b.author);
+    if (!norm(state.q).split(/\s+/).every(w => hay.includes(w))) return false;
+  }
+  return true;
+}
+
+// ---- Render ---------------------------------------------------------------
+function chip(label, pressed, onclick, count) {
+  return h("button", { class: "chip", type: "button", "aria-pressed": String(pressed), onclick },
+    label, count != null ? h("span", { class: "n" }, count) : null);
+}
+
+function genreFieldset() {
+  const counts = {};
+  DATA.books.filter(b => matches(b, { genres: true })).forEach(b => b.genres.forEach(g => counts[g] = (counts[g] || 0) + 1));
+  const genres = DATA.genreOrder.filter(g => counts[g] || state.genres.includes(g));
+  return h("fieldset", { id: "genres-box" }, h("legend", {}, "Género"),
+    h("div", { class: "chips" }, genres.map(g => chip(g, state.genres.includes(g), () => update({ genres: toggle(state.genres, g) }), counts[g] || 0))),
+    state.genres.length > 1 ? h("div", { class: "row" },
+      h("select", { id: "genreMode", onchange: e => update({ genreMode: e.target.value }) },
+        h("option", { value: "any", selected: state.genreMode === "any" }, "Cumple alguno de los géneros"),
+        h("option", { value: "all", selected: state.genreMode === "all" }, "Cumple todos los géneros"))) : null);
+}
+
+function renderFilters() {
+  const aside = document.getElementById("filters");
+  aside.replaceChildren();
+
+  const shelfCounts = {};
+  DATA.books.forEach(b => shelfCounts[b.shelf] = (shelfCounts[b.shelf] || 0) + 1);
+  aside.append(h("fieldset", {}, h("legend", {}, "Estante"),
+    h("div", { class: "chips" }, SHELVES.map(([k, label]) =>
+      chip(label, state.shelves.includes(k), () => update({ shelves: toggle(state.shelves, k) }), shelfCounts[k] || 0)))));
+
+  const presets = [["≤ 150", "", 150], ["≤ 200", "", 200], ["≤ 300", "", 300], ["300–500", 300, 500], ["500+", 500, ""]];
+  aside.append(h("fieldset", {}, h("legend", {}, "Páginas"),
+    h("div", { class: "row" },
+      h("input", { id: "pagesMin", type: "number", min: 0, placeholder: "mín", value: state.pagesMin, oninput: e => update({ pagesMin: e.target.value }, true) }),
+      h("input", { id: "pagesMax", type: "number", min: 0, placeholder: "máx", value: state.pagesMax, oninput: e => update({ pagesMax: e.target.value }, true) })),
+    h("div", { class: "chips", style: "margin-top:8px" }, presets.map(([label, lo, hi]) =>
+      chip(label, state.pagesMin === String(lo) && state.pagesMax === String(hi) || (state.pagesMin == lo && state.pagesMax == hi && (lo !== "" || hi !== "")),
+        () => update({ pagesMin: String(lo), pagesMax: String(hi) }))))));
+
+  aside.append(genreFieldset());
+
+  aside.append(h("fieldset", {}, h("legend", {}, "Año de publicación original"),
+    h("div", { class: "row" },
+      h("input", { id: "yearMin", type: "number", placeholder: "desde", value: state.yearMin, oninput: e => update({ yearMin: e.target.value }, true) }),
+      h("input", { id: "yearMax", type: "number", placeholder: "hasta", value: state.yearMax, oninput: e => update({ yearMax: e.target.value }, true) }))));
+
+  const allTags = [...new Set(DATA.books.flatMap(b => b.tags || []))].sort();
+  const extras = [
+    h("label", { class: "check" }, h("input", { type: "checkbox", checked: state.liked, onchange: e => update({ liked: e.target.checked }) }),
+      `De un autor que ya leí y me gustó (${DATA.likedMin}★+)`),
+  ];
+  if (DATA.books.some(b => b.owned))
+    extras.push(h("label", { class: "check" }, h("input", { type: "checkbox", checked: state.owned, onchange: e => update({ owned: e.target.checked }) }), "Lo tengo en casa"));
+  aside.append(h("fieldset", {}, h("legend", {}, "Otros"), ...extras,
+    allTags.length ? h("div", { class: "chips", style: "margin-top:8px" }, allTags.map(t => chip(t, state.tags.includes(t), () => update({ tags: toggle(state.tags, t) })))) : null));
+
+  aside.append(h("fieldset", {}, h("legend", {}, "Buscar"),
+    h("input", { id: "q", type: "search", placeholder: "título o autor", value: state.q, oninput: e => update({ q: e.target.value }, true) })));
+  aside.append(h("fieldset", {}, h("legend", {}, "Ordenar"),
+    h("select", { id: "sort", onchange: e => update({ sort: e.target.value }) },
+      Object.entries(SORTS).map(([k, [label]]) => h("option", { value: k, selected: state.sort === k }, label)))));
+
+  aside.append(h("button", { class: "primary", type: "button", onclick: surprise }, "🎲 Sorprendeme"));
+  aside.append(h("button", { class: "ghost", type: "button", onclick: () => { state = { ...DEFAULTS }; pick = null; saveState(); render(); } }, "Limpiar filtros"));
+}
+
+function card(b, isPick) {
+  const facts = [];
+  if (b.pages) facts.push(`${b.pages} págs`); else facts.push("págs: sin dato");
+  if (b.year) facts.push(String(b.year));
+  if (b.shelf === "to-read" && b.added) facts.push(`en la lista desde ${b.added.slice(0, 4)}`);
+  if (b.shelf === "read" && b.rating) facts.push("★".repeat(b.rating));
+  const tags = [...b.genres.map(g => h("span", { class: "tag" }, g))];
+  (b.tags || []).forEach(t => tags.push(h("span", { class: "tag fav" }, "#" + t)));
+  if (b.liked && b.liked.length)
+    tags.push(h("span", { class: "tag liked", title: b.liked.map(l => `${l.t} (${l.r}★)`).join("\n") },
+      "Te gustó: " + b.liked.slice(0, 2).map(l => l.t).join(", ") + (b.liked.length > 2 ? "…" : "")));
+  return h("article", { class: "card" + (isPick ? " pick" : "") },
+    isPick ? h("div", { class: "banner" }, "🎲 Tu próxima lectura podría ser…") : null,
+    h("h3", {}, h("a", { href: `https://www.goodreads.com/book/show/${b.id}`, target: "_blank", rel: "noopener" }, b.title)),
+    h("div", { class: "by" }, b.author),
+    h("div", { class: "facts" }, facts.map(f => h("span", {}, f))),
+    h("div", { class: "tags" }, tags));
+}
+
+function render() {
+  renderFilters();
+  renderResults();
+}
+
+function renderResults() {
+  const list = DATA.books.filter(b => matches(b)).sort(SORTS[state.sort]?.[1] || SORTS["pages-asc"][1]);
+  const noPages = list.filter(b => !b.pages).length;
+  const count = document.getElementById("count");
+  count.textContent = `${list.length} libro${list.length === 1 ? "" : "s"}` + (noPages && num(state.pagesMin) == null && num(state.pagesMax) == null ? ` · ${noPages} sin dato de páginas` : "");
+  const box = document.getElementById("results");
+  box.replaceChildren();
+  if (pick && list.some(b => b.id === pick.id)) box.append(card(pick, true));
+  if (!list.length) box.append(h("div", { class: "empty", style: "grid-column:1/-1" }, "Ningún libro cumple estos filtros. Probá aflojar alguno."));
+  list.forEach(b => box.append(card(b)));
+}
+
+// Mientras se escribe en un input (typing=true) NO se reconstruye el panel de filtros:
+// hacerlo reemplaza el input y mueve el cursor. Solo se refrescan conteos de género y resultados.
+function update(patch, typing) {
+  Object.assign(state, patch);
+  pick = null;
+  saveState();
+  if (typing) {
+    const box = document.getElementById("genres-box");
+    if (box) box.replaceWith(genreFieldset());
+    renderResults();
+  } else {
+    render();
+  }
+}
+
+function surprise() {
+  const list = DATA.books.filter(b => matches(b));
+  if (!list.length) return;
+  pick = list[Math.floor(Math.random() * list.length)];
+  render();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ---- Vista "Clasificar" ----------------------------------------------------------
+const SHELF_PRIO = { "to-read": 0, "currently-reading": 1, read: 2, "did-not-finish": 3 };
+const toClassify = DATA.books.filter(b => b.orig.genres.length === 1 && b.orig.genres[0] === UNCLASSIFIED)
+  .sort((a, b) => (SHELF_PRIO[a.shelf] - SHELF_PRIO[b.shelf]) || a.title.localeCompare(b.title, "es"));
+const classifiable = DATA.genreOrder.filter(g => g !== UNCLASSIFIED);
+
+function mergedOverrides() {
+  const out = { ...DATA.overrides };
+  for (const [id, o] of Object.entries(pending)) {
+    const clean = {};
+    if (o.genres && o.genres.length) clean.genres = o.genres;
+    if (o.pages) clean.pages = o.pages;
+    if (Object.keys(clean).length) out[id] = clean;
+  }
+  return out;
+}
+
+function setPending(b, patch) {
+  const o = { ...(pending[b.id] || {}), ...patch };
+  if (!(o.genres && o.genres.length) && !o.pages) delete pending[b.id]; else pending[b.id] = o;
+  savePending();
+  applyOverride(b);
+}
+
+function classifyRow(b) {
+  const o = pending[b.id] || {};
+  const sel = o.genres || [];
+  const q = encodeURIComponent(`${b.title} ${b.author} género`);
+  const row = h("article", { class: "crow" + (sel.length ? " done" : "") },
+    h("div", {}, h("strong", {}, b.title), h("span", { class: "by" }, " · " + b.author),
+      h("span", { class: "by" }, ` · ${SHELVES.find(x => x[0] === b.shelf)?.[1] || b.shelf}`)),
+    h("div", { class: "links" },
+      h("a", { href: `https://www.goodreads.com/book/show/${b.id}`, target: "_blank", rel: "noopener" }, "Ver en Goodreads ↗"),
+      h("a", { href: `https://www.google.com/search?q=${q}`, target: "_blank", rel: "noopener" }, "Buscar en Google ↗")),
+    h("div", { class: "chips" }, classifiable.map(g => chip(g, sel.includes(g), () => {
+      setPending(b, { genres: toggle(sel, g) });
+      row.replaceWith(classifyRow(b));
+      renderClassifyTop();
+    }))),
+    b.orig.pages ? null : h("div", { class: "row" }, h("label", {}, "Páginas: "),
+      h("input", { type: "number", min: 1, placeholder: "sin dato", value: o.pages || "",
+        oninput: e => { setPending(b, { pages: Number(e.target.value) || 0 }); renderClassifyTop(); } })));
+  return row;
+}
+
+function renderClassifyTop() {
+  const n = Object.keys(pending).length;
+  const el = document.getElementById("classifyTop");
+  if (!el) return;
+  el.replaceChildren(
+    h("button", { class: "ghost", type: "button", onclick: () => { location.hash = ""; } }, "← Volver a la lista"),
+    h("strong", {}, `${toClassify.filter(b => (pending[b.id]?.genres || []).length).length} de ${toClassify.length} clasificados`),
+    h("button", { class: "primary", type: "button", disabled: !n, onclick: downloadOverrides }, "Descargar overrides.json"),
+    h("button", { class: "ghost", type: "button", disabled: !n, onclick: copyOverrides }, "Copiar JSON"));
+}
+
+function overridesText() { return JSON.stringify(mergedOverrides(), null, 2) + "\n"; }
+function downloadOverrides() {
+  const a = h("a", { href: URL.createObjectURL(new Blob([overridesText()], { type: "application/json" })), download: "overrides.json" });
+  document.body.append(a); a.click(); a.remove();
+}
+async function copyOverrides() {
+  const btn = document.activeElement;
+  try {
+    await navigator.clipboard.writeText(overridesText());
+    if (btn && btn.tagName === "BUTTON") { btn.textContent = "¡Copiado!"; setTimeout(renderClassifyTop, 1500); }
+  } catch { downloadOverrides(); }
+}
+
+function renderClassify() {
+  const box = document.getElementById("classify");
+  box.replaceChildren(
+    h("h2", {}, "Clasificar libros sin género"),
+    h("p", { class: "help" }, "Elegí géneros para cada libro: se aplican al instante en este navegador. Para dejarlos permanentes, descargá el archivo, reemplazá ",
+      h("code", {}, "data/overrides.json"), " (ya incluye los overrides anteriores) y corré ", h("code", {}, "make offline"), "."),
+    h("div", { class: "top", id: "classifyTop" }),
+    ...(toClassify.length ? toClassify.map(classifyRow) : [h("div", { class: "empty" }, "No quedan libros sin clasificar 🎉")]));
+  renderClassifyTop();
+}
+
+function route() {
+  const c = location.hash === "#clasificar";
+  document.getElementById("classify").hidden = !c;
+  document.getElementById("listView").hidden = c;
+  if (c) { renderClassify(); window.scrollTo(0, 0); } else render();
+}
+window.addEventListener("hashchange", route);
+const cl = document.getElementById("classifyLink");
+if (toClassify.length) {
+  cl.hidden = false;
+  cl.textContent = `🏷 clasificar (${toClassify.length})`;
+  cl.addEventListener("click", () => { location.hash = "#clasificar"; });
+}
+
+document.getElementById("stamp").textContent = `${DATA.books.length} libros · ${DATA.source} · generado ${DATA.generatedAt}`;
+route();
+</script>
+</body>
+</html>

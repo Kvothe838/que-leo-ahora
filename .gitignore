@@ -1,0 +1,5 @@
+# Exports de Goodreads: incluyen reseñas y notas privadas, no se suben.
+*.csv
+books
+.DS_Store
+# output/index.html SÍ se versiona: es lo que publica GitHub Pages.
